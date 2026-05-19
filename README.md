@@ -6,7 +6,7 @@
 
 ```
 rag/
-├── src/                        # 主模型核心代码
+├── src/                        # 核心代码
 │   ├── agent/                  # Agent 实现
 │   │   ├── base.py             # BaseAgent 基类
 │   │   └── prompt.py           # System prompts
@@ -20,13 +20,16 @@ rag/
 │   │   ├── keyword_search.py   # 关键词检索
 │   │   ├── semantic_search.py  # 语义检索
 │   │   └── read_chunk.py       # 读取文档块
-│   └── index/                  # 语义索引存储
+│   └── rag/
+│       ├── engine.py           # RAG 引擎
+│       └── run.py              # CLI 入口
 ├── config/
-│   └── setting.py              # 配置文件
+│   └── setting.py              # 全局配置
 ├── scripts/                    # 运行脚本
-│   ├── batch_runner.py         # 批量运行主模型
+│   ├── batch_runner.py         # 批量运行
 │   ├── build_index.py          # 构建语义索引
 │   ├── build_dual_graph.py     # 构建双层认知图
+│   ├── chunk_corpus.py         # 文档分块
 │   └── eval.py                 # 评估脚本
 ├── data/                       # 数据集
 └── results/                    # 输出结果
@@ -34,22 +37,18 @@ rag/
 
 ## 模型说明
 
-### AgentGraph-RAG（主模型）
-
 基于双层认知导航图实现的多跳问答：
 
 - **Dual-Graph**: 实体层 + 篇章层
   - **实体节点**: 使用 spaCy NER 提取的名词实体
   - **篇章节点**: 文档块
-  - **包含边**: 篇章 → 实体 (实体出现在该篇章中)
-  - **共现边**: 实体 ↔ 实体 (在同一篇章中共现，权重为共现次数)
+  - **包含边**: 篇章 → 实体
+  - **共现边**: 实体 ↔ 实体（权重为共现次数）
 
-- **graph_hop**: 图遍历检索 - 查找共现实体
-
-- **检索模式**:
-  - `keyword`: 关键词检索 + 图遍历
-  - `semantic`: 语义检索 + 图遍历
-  - `hybrid`: 关键词 + 语义混合检索
+- **检索工具**（自动注册，按需启用）:
+  - `keyword_search`: 关键词检索 + 图遍历
+  - `semantic_search`: 语义检索（需构建索引）
+  - `graph_hop`: 图遍历检索（需构建双层图）
 
 ---
 
@@ -60,8 +59,7 @@ rag/
 编辑 `config/setting.py`：
 
 ```python
-DATASET = "2wikimultihopqa"
-RETRIEVAL_TOOL = "keyword"
+DATASET = "hotpotqa"
 LLM_MODEL = "qwen3.5-flash"
 LLM_API_KEY = "your-api-key"
 EMBEDDING_MODEL = "/path/to/embedding/model"
@@ -76,7 +74,10 @@ EMBEDDING_MODEL = "/path/to/embedding/model"
 ### 3. 构建索引
 
 ```bash
-# 语义索引（所有模式都需要）
+# 文档分块
+python scripts/chunk_corpus.py
+
+# 语义索引
 python scripts/build_index.py
 
 # 双层认知图
@@ -86,6 +87,10 @@ python scripts/build_dual_graph.py
 ### 4. 运行
 
 ```bash
+# 单条查询
+python src/rag/run.py "your question"
+
+# 批量运行
 python scripts/batch_runner.py
 ```
 
@@ -109,22 +114,9 @@ python scripts/eval.py --predictions results/.../predictions.jsonl
 }
 ```
 
-### 评估指标
+## 评估指标
 
 | 指标 | 说明 |
 |------|------|
 | **LLMAcc** | LLM 判断答案正确性 |
 | **ContAcc** | 预测答案包含支持事实 |
-
----
-
-## Baseline
-
-用于对比的 baseline 模型放在根目录下，以其模型名字命名。每个 baseline 模型都有其自己的 config、results 目录。baseline 模型的数据使用 data，模型调用方式、评估方式沿用 AgentGraph-RAG 的代码，具体实现在各自的文件夹里，不得修改 baseline 文件夹之外的内容。
-
-## 注意事项
-
-1. LLM 通过 API 调用，需要配置 API Key
-2. Embedding 模型需要下载到本地，建议使用 sentence-transformers 模型
-3. 默认 LLM: qwen3.5-flash
-4. 默认 Embedding: qwen3-4B
