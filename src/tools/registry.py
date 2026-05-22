@@ -1,4 +1,4 @@
-"""Tool registry for ARAG."""
+"""Tool registry."""
 
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 
