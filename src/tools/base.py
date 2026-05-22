@@ -1,4 +1,4 @@
-"""Base tool class for ARAG."""
+"""Base tool class."""
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Tuple, TYPE_CHECKING
