@@ -1,4 +1,4 @@
-"""Base agent implementation for ARAG - src3 version."""
+"""Base agent."""
 
 import json
 import logging
