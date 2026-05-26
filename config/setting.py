@@ -65,7 +65,7 @@ DATA_GRAPH_DIR = f"{project_root}/data/graphs"
 
 # LLM Configuration
 LLM_MODEL = "qwen3.5-flash"
-LLM_API_KEY = "sk-84efbff494e54a0aa620dcae02e7e43d"
+LLM_API_KEY = ""
 LLM_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 LLM_TEMPERATURE = 0.0
 LLM_MAX_TOKENS = 16384
